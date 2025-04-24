@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GLB Viewer (ESM)</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.1/build/three.module.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.160.1/examples/jsm/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(2, 2, 5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+    light.position.set(0, 20, 0);
+    scene.add(light);
+
+    const gridHelper = new THREE.GridHelper(10, 20);
+    scene.add(gridHelper);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      'https://cors-anywhere.herokuapp.com/https://drive.google.com/uc?id=1zI91-YI-3RFhOAkKkOx67H7quSHcwfX7&export=download',
+      function (gltf) {
+        const model = gltf.scene;
+        scene.add(model);
+
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+
+        controls.update();
+      },
+      (progress) => {
+        console.log(`Loading: ${(progress.loaded / progress.total * 100).toFixed(2)}%`);
+      },
+      function (error) {
+        console.error('Ошибка загрузки модели:', error);
+        alert('Не удалось загрузить модель. Проверьте ссылку или CORS настройки.');
+      }
+    );
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
